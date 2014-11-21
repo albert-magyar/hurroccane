@@ -56,7 +56,7 @@ class HurroccanneQueueMgr extends Module with UsesHurroccaneParameters {
     blockedOn(i) := Bool(false)
     for (j <- 0 until params(HurroccaneNumPorts)) {
       if (i != j) {
-        blockedOn(j) := ~io.ports(j).out.ready && outMask(j))
+        blockedOn(j) := ~io.ports(j).out.ready && outMask(j)
       }
     }
     io.ports(i).out.valid := (blockedOn.toBits() == Bits(0))

@@ -40,7 +40,7 @@ extends rocket.RoCC with UsesHurroccaneParameters {
   // Loopback queues for testing
   if (isLoopback) {
     val loopbackQueues = Vec.fill(params(HurroccaneNumPorts)) {
-      Queue(Bits(width = params(XprLen))), 2)
+      Queue(Bits(width = params(XprLen)), 2)
     }
     for (i <- 0 until params(HurroccaneNumPorts)) {
       queueMgr.io.ports(i).out <> loopbackQueues.io.enq
