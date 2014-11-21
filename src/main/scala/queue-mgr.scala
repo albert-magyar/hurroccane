@@ -2,6 +2,7 @@ package hurroccane
 
 import Chisel._
 import uncore._
+import HurroccaneConstants._ // until params() is working in project
 
 class HurroccanePort extends Bundle with UsesHurroccaneParameters {
   val in = Decoupled(Bits(width = params(XprLen))).flip

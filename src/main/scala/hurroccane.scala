@@ -8,6 +8,9 @@ object HurroccaneConstants {
                 "send" -> Bits("b0"),
                 "recv" -> Bits("b1")
                )
+  def params(param: Int) = { param }
+  val HurroccaneNumPorts: Int = 4
+  val XprLen: Int = 64
 }
 
 abstract trait UsesHurroccaneParameters extends UsesParameters {
@@ -16,6 +19,8 @@ abstract trait UsesHurroccaneParameters extends UsesParameters {
 
 class Hurroccane(isLoopback: Boolean = true)
 extends rocket.RoCC with UsesHurroccaneParameters {
+
+  import HurroccaneConstants._ // until params() is working in project
 
   // Queue manager is the "core logic" of the hurroccane rocc queues
   val queueMgr = Module(new HurroccaneQueueMgr())
