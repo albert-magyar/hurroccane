@@ -1,0 +1,9 @@
+RoCC accelerator to control communication queues for the RISC-V version of Hurricane.
+
+Use it like another RoCC coprocessor:
+
+lazy val hurroccane = Project("hurroccane", file("hurroccane"), settings = buildSettings)
+
+This should work with Chisel @ 97391ab4e02da6c7904ac2d784765af89af28950
+
+
