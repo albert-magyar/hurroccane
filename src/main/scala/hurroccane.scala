@@ -32,7 +32,7 @@ extends rocket.RoCC with UsesHurroccaneParameters {
 
   // Response shim logic
   io.resp.valid := queueMgr.io.resp.valid
-  io.resp.bits.rd := io.cmd.bits.rd
+  io.resp.bits.rd := io.cmd.bits.inst.rd
   io.resp.bits.data := queueMgr.io.resp.bits.recvData
   queueMgr.io.resp.ready := io.resp.ready
 

@@ -21,11 +21,11 @@ class HurroccaneQueueMgrResp extends Bundle with UsesHurroccaneParameters {
 
 class HurroccaneQueueMgrIO extends Bundle with UsesHurroccaneParameters {
   val ports = Vec.fill(params(HurroccaneNumPorts)){ new HurroccanePort() }
-  val cmd   = Decoupled(HurroccaneQueueMgrCmd).flip
-  val resp  = Decoupled(HurroccaneQueueMgrResp)
+  val cmd   = Decoupled(new HurroccaneQueueMgrCmd).flip
+  val resp  = Decoupled(new HurroccaneQueueMgrResp)
 }
 
-class HurroccanneQueueMgr extends Module with UsesHurroccaneParameters {
+class HurroccaneQueueMgr extends Module with UsesHurroccaneParameters {
   val io = new HurroccaneQueueMgrIO
 
   val isRecv  = io.cmd.bits.op == HurroccaneConstants.ops("recv")
