@@ -5,8 +5,11 @@ import uncore._
 
 object HurroccaneConstants {
   val ops = Map(
-                "send" -> Bits("b0"),
-                "recv" -> Bits("b1")
+                "send"   -> Bits("b000"),
+                "recv"   -> Bits("b001"),
+                "nbsend" -> Bits("b010"),
+                "nbrecv" -> Bits("b011"),
+		"ldnb"   -> Bits("b100")
                )
   def params(param: Int): Int = { param }
   val HurroccaneNumPorts: Int = 4
@@ -17,8 +20,14 @@ abstract trait UsesHurroccaneParameters extends UsesParameters {
 
 }
 
+class HurroccaneInterface extends rocket.RoCCInterface {
+  val ports = Vec.fill(HurroccaneConstants.HurroccaneNumPorts) { new HurroccanePort() }
+}
+
 class Hurroccane(isLoopback: Boolean = true)
 extends rocket.RoCC with UsesHurroccaneParameters {
+
+  // override val io = new HurroccaneInterface()
 
   // Queue manager is the "core logic" of the hurroccane rocc queues
   val queueMgr = Module(new HurroccaneQueueMgr())
@@ -36,7 +45,7 @@ extends rocket.RoCC with UsesHurroccaneParameters {
   // Response shim logic
   io.resp.valid := queueMgr.io.resp.valid
   io.resp.bits.rd := io.cmd.bits.inst.rd
-  io.resp.bits.data := queueMgr.io.resp.bits.recvData
+  io.resp.bits.data := queueMgr.io.resp.bits.respData
   queueMgr.io.resp.ready := io.resp.ready
 
 
@@ -49,6 +58,8 @@ extends rocket.RoCC with UsesHurroccaneParameters {
       loopbackQueues(i).io.enq <> queueMgr.io.ports(i).out
       queueMgr.io.ports(i).in <> loopbackQueues(i).io.deq
     }
+  } else {
+    // queueMgr.io.ports <> io.ports
   }
 
   

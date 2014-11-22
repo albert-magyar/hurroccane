@@ -17,7 +17,7 @@ class HurroccaneQueueMgrCmd extends Bundle with UsesHurroccaneParameters {
 }
 
 class HurroccaneQueueMgrResp extends Bundle with UsesHurroccaneParameters {
-  val recvData = Bits(width = HurroccaneConstants.XprLen)
+  val respData = Bits(width = HurroccaneConstants.XprLen)
 }
 
 class HurroccaneQueueMgrIO extends Bundle with UsesHurroccaneParameters {
@@ -29,13 +29,22 @@ class HurroccaneQueueMgrIO extends Bundle with UsesHurroccaneParameters {
 class HurroccaneQueueMgr extends Module with UsesHurroccaneParameters {
   val io = new HurroccaneQueueMgrIO
 
-  val isRecv  = io.cmd.bits.op === HurroccaneConstants.ops("recv")
+  val isRecv  = ((io.cmd.bits.op === HurroccaneConstants.ops("recv"))
+                 || (io.cmd.bits.op === HurroccaneConstants.ops("nbrecv")))
   val inDir   = io.cmd.bits.recvDir
 
-  val isSend  = io.cmd.bits.op === HurroccaneConstants.ops("send")
+  val isSend  = ((io.cmd.bits.op === HurroccaneConstants.ops("send"))
+                 || (io.cmd.bits.op === HurroccaneConstants.ops("nbsend")))
   val outMask = Mux(isSend,
                     io.cmd.bits.sendMask,
                     Bits(0))
+
+  val isNonBlocking = ((io.cmd.bits.op === HurroccaneConstants.ops("nbsend"))
+                       || (io.cmd.bits.op === HurroccaneConstants.ops("nbrecv")))
+
+  val isLoad = io.cmd.bits.op === HurroccaneConstants.ops("ldnb")
+
+  val nbrecv_r = Reg(Bits(width = HurroccaneConstants.XprLen))
 
   // examine global readiness
   val outPortClear = Vec.fill(HurroccaneConstants.HurroccaneNumPorts){ Bool() }
@@ -49,27 +58,39 @@ class HurroccaneQueueMgr extends Module with UsesHurroccaneParameters {
   for (i <- 0 until HurroccaneConstants.HurroccaneNumPorts) {
     io.ports(i).in.ready := Bool(false)
   }
-  io.ports(inDir).in.ready := allClear
+  io.ports(inDir).in.ready := allClear && isSend
 
   // setup output ports
+  val blockedOn = Vec.fill(HurroccaneConstants.HurroccaneNumPorts){ Bool() }
   for (i <- 0 until HurroccaneConstants.HurroccaneNumPorts) {
-    val blockedOn = Vec.fill(HurroccaneConstants.HurroccaneNumPorts){ Bool() }
     blockedOn(i) := Bool(false)
     for (j <- 0 until HurroccaneConstants.HurroccaneNumPorts) {
       if (i != j) {
         blockedOn(j) := ~io.ports(j).out.ready && outMask(j)
       }
     }
-    io.ports(i).out.valid := (blockedOn.toBits() === Bits(0))
+    io.ports(i).out.valid := (blockedOn.toBits() === Bits(0)) && outMask(i)
     io.ports(i).out.bits := io.cmd.bits.sendData
   }
 
   // setup cmd ready
-  io.cmd.ready := io.resp.ready && allClear
+  io.cmd.ready := io.resp.ready && (allClear || isNonBlocking)
 
   // setup resp
-  io.resp.valid := io.cmd.valid && allClear
-  io.resp.bits.recvData := io.ports(inDir).in.bits
+  io.resp.valid := io.cmd.valid && (allClear || isNonBlocking)
+  io.resp.bits.respData := io.ports(inDir).in.bits
+  when (isNonBlocking && isSend) {
+    io.resp.bits.respData := blockedOn.toBits()
+  }
+  when (isNonBlocking && isRecv) {
+    io.resp.bits.respData := ~io.ports(inDir).in.valid
+    when (allClear) {
+      nbrecv_r := io.ports(inDir).in.bits
+    }
+  }
+  when (isLoad) {
+    io.resp.bits.respData := nbrecv_r
+  }
 }
 
 
